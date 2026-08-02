@@ -26,8 +26,8 @@ The subscriber file is hot-reloadable: edits are picked up automatically
 stolen radio disabled with zero downtime. A file that fails to parse never
 replaces the last known-good database.
 
-Copyright (C) 2025 Cort Buffington, N0MJS
-License: GNU GPLv3
+Copyright (C) 2025 HBlink4 Part 90 contributors
+License: GNU GPLv3 (as part of the HBlink4 combined work)
 """
 
 import json

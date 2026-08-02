@@ -16,8 +16,8 @@ tools (jq, awk, spreadsheet import) and shipped to any billing pipeline.
 Volume is bounded by human speech - one record per PTT release - so a
 plain append with flush is more than fast enough and survives crashes.
 
-Copyright (C) 2025 Cort Buffington, N0MJS
-License: GNU GPLv3
+Copyright (C) 2025 HBlink4 Part 90 contributors
+License: GNU GPLv3 (as part of the HBlink4 combined work)
 """
 
 import json
