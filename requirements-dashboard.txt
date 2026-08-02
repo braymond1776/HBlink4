@@ -1,4 +1,4 @@
-# HBlink4 Dashboard Requirements
+# IpswichSuite Dashboard Requirements
 # Install with: pip install -r requirements-dashboard.txt
 
 # Web framework

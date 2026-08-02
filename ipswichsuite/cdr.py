@@ -1,5 +1,5 @@
 """
-Call Detail Records (CDR) for HBlink4
+Call Detail Records (CDR) for IpswichSuite
 
 Commercial (Part 90) system operators need an auditable, machine-readable
 record of every call for billing, capacity planning, and incident review.
@@ -16,8 +16,8 @@ tools (jq, awk, spreadsheet import) and shipped to any billing pipeline.
 Volume is bounded by human speech - one record per PTT release - so a
 plain append with flush is more than fast enough and survives crashes.
 
-Copyright (C) 2025 HBlink4 Part 90 contributors
-License: GNU GPLv3 (as part of the HBlink4 combined work)
+Copyright (C) 2025-2026 Ipswich River Labs, LLC
+License: GNU GPLv3 (as part of the IpswichSuite combined work)
 """
 
 import json

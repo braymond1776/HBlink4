@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-User Routing Cache for HBlink4
+User Routing Cache for IpswichSuite
 
 Tracks DMR users (radio IDs) and their last heard repeater for:
 1. Dashboard "Last Heard" display
@@ -9,7 +9,8 @@ Tracks DMR users (radio IDs) and their last heard repeater for:
 The cache is time-limited to prevent unbounded memory growth.
 Default timeout: 10 minutes (configurable)
 
-Copyright (C) 2025 Cort Buffington, N0MJS
+Copyright (C) 2025 Cort Buffington, N0MJS (as HBlink4)
+Modified 2026 by Ipswich River Labs, LLC (IpswichSuite)
 License: GNU GPLv3
 """
 

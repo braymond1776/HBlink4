@@ -1,5 +1,5 @@
 """
-Access control and configuration matching module for HBlink4
+Access control and configuration matching module for IpswichSuite
 """
 
 import re

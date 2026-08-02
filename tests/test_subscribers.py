@@ -7,7 +7,7 @@ import os
 import tempfile
 import unittest
 
-from hblink4.subscribers import (
+from ipswichsuite.subscribers import (
     SubscriberACL, SubscriberConfigError,
     REASON_AUTHORIZED, REASON_DISABLED, REASON_UNKNOWN,
     REASON_SUBSCRIBER_DISABLED, REASON_FLEET_DISABLED, REASON_TG_DENIED,

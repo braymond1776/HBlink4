@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Dashboard launcher for HBlink4
+Dashboard launcher for IpswichSuite
 Starts the FastAPI web dashboard server
 """
 
@@ -18,7 +18,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 2:
         port = int(sys.argv[2])
     
-    print(f"Starting HBlink4 Dashboard on http://{host}:{port}")
+    print(f"Starting IpswichSuite Dashboard on http://{host}:{port}")
     print("Press CTRL+C to stop")
     print()
     

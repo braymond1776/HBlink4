@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-HBlink4 Runner Script
+IpswichSuite Runner Script
 """
 
 import os
 import sys
-from hblink4.hblink import main
+from ipswichsuite.server import main
 
 if __name__ == '__main__':
     # If no config file specified, use config/config.json relative to this script

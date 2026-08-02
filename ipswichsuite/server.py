@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """
-Copyright (C) 2025 Cort Buffington, N0MJS
+IpswichSuite DMR network server (by Ipswich River Labs, LLC)
 
 A complete architectural redesign of HBlink3, implementing a repeater-centric
-approach to DMR server services. The HomeBrew DMR protocol is UDP-based, used for 
+approach to DMR server services. The HomeBrew DMR protocol is UDP-based, used for
 communication between DMR repeaters and servers.
+
+Copyright (C) 2025 Cort Buffington, N0MJS (as HBlink4)
+Modified 2026 by Ipswich River Labs, LLC: IpswichSuite rebrand and
+FCC Part 90 features (subscriber access control, call detail records).
 
 License: GNU GPLv3
 """
@@ -33,7 +37,8 @@ import sys
 try:
     from .constants import (
         RPTA, RPTL, RPTK, RPTC, RPTCL, MSTCL, DMRD,
-        MSTNAK, MSTPONG, RPTPING, RPTACK, RPTP, RPTO, DMRA
+        MSTNAK, MSTPONG, RPTPING, RPTACK, RPTP, RPTO, DMRA,
+        PRODUCT_NAME, PRODUCT_VENDOR
     )
     from .access_control import RepeaterMatcher
     from .events import EventEmitter
@@ -44,7 +49,8 @@ except ImportError:
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from constants import (
         RPTA, RPTL, RPTK, RPTC, RPTCL, MSTCL, DMRD,
-        MSTNAK, MSTPONG, RPTPING, RPTACK, RPTP, RPTO, DMRA
+        MSTNAK, MSTPONG, RPTPING, RPTACK, RPTP, RPTO, DMRA,
+        PRODUCT_NAME, PRODUCT_VENDOR
     )
     from access_control import RepeaterMatcher
     from events import EventEmitter
@@ -212,7 +218,7 @@ class HBProtocol(asyncio.DatagramProtocol):
             host_ipv4=dashboard_config.get('host_ipv4', '127.0.0.1'),
             host_ipv6=dashboard_config.get('host_ipv6', '::1'),
             port=dashboard_config.get('port', 8765),
-            unix_socket=dashboard_config.get('unix_socket', '/tmp/hblink4.sock'),
+            unix_socket=dashboard_config.get('unix_socket', '/tmp/ipswichsuite.sock'),
             disable_ipv6=dashboard_config.get('disable_ipv6', False),
             buffer_size=dashboard_config.get('buffer_size', 65536)
         )
@@ -1914,9 +1920,9 @@ def cleanup_old_logs(log_dir: pathlib.Path, max_days: int) -> None:
     cutoff_date = current_date - timedelta(days=max_days)
     
     try:
-        for log_file in log_dir.glob('hblink.log.*'):
+        for log_file in log_dir.glob('ipswichsuite.log.*'):
             try:
-                # Extract date from filename (expecting format: hblink.log.YYYY-MM-DD)
+                # Extract date from filename (expecting format: ipswichsuite.log.YYYY-MM-DD)
                 date_str = log_file.name.split('.')[-1]
                 file_date = datetime.strptime(date_str, '%Y-%m-%d')
                 
@@ -1933,7 +1939,7 @@ def setup_logging():
     logging_config = CONFIG.get('global', {}).get('logging', {})
     
     # Get logging configuration with defaults
-    log_file = logging_config.get('file', 'logs/hblink.log')
+    log_file = logging_config.get('file', 'logs/ipswichsuite.log')
     file_level = getattr(logging, logging_config.get('file_level', 'DEBUG'))
     console_level = getattr(logging, logging_config.get('console_level', 'INFO'))
     max_days = logging_config.get('retention_days', 30)
@@ -2009,7 +2015,7 @@ async def async_main():
             )
             transports.append(transport_v4)
             protocols.append(protocol_v4)
-            LOGGER.info(f'✓ HBlink4 listening on {bind_ipv4}:{port_ipv4} (UDP, IPv4)')
+            LOGGER.info(f'✓ IpswichSuite listening on {bind_ipv4}:{port_ipv4} (UDP, IPv4)')
         except Exception as e:
             LOGGER.error(f'✗ Failed to bind IPv4 to {bind_ipv4}:{port_ipv4}: {e}')
             if bind_ipv4 == '0.0.0.0':
@@ -2026,7 +2032,7 @@ async def async_main():
             )
             transports.append(transport_v6)
             protocols.append(protocol_v6)
-            LOGGER.info(f'✓ HBlink4 listening on [{bind_ipv6}]:{port_ipv6} (UDP, IPv6)')
+            LOGGER.info(f'✓ IpswichSuite listening on [{bind_ipv6}]:{port_ipv6} (UDP, IPv6)')
         except OSError as e:
             error_msg = str(e)
             if 'address already in use' in error_msg.lower() or 'address in use' in error_msg.lower():
@@ -2082,7 +2088,7 @@ def main():
     
     # Startup banner
     LOGGER.info('🚀 ═══════════════════════════════════════════════════════════════')
-    LOGGER.info('🚀 HBLINK4 STARTING UP')
+    LOGGER.info(f'🚀 {PRODUCT_NAME.upper()} STARTING UP ({PRODUCT_VENDOR})')
     LOGGER.info('🚀 ═══════════════════════════════════════════════════════════════')
     
     asyncio.run(async_main())

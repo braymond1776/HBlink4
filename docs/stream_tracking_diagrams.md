@@ -1,6 +1,6 @@
-# HBlink4 Stream Tracking Diagrams
+# IpswichSuite Stream Tracking Diagrams
 
-This document provides visual representations of HBlink4's stream tracking system, including packet flows, contention scenarios, and hang time protection mechanisms.
+This document provides visual representations of IpswichSuite's stream tracking system, including packet flows, contention scenarios, and hang time protection mechanisms.
 
 ## Table of Contents
 
@@ -265,7 +265,7 @@ RESULT:  Primary method (terminator): ~60ms slot availability
          Fast terminator (contention): ~200ms
          Fallback (timeout): ~2000ms
          
-HBlink4 uses ALL THREE methods for maximum reliability and performance!
+IpswichSuite uses ALL THREE methods for maximum reliability and performance!
 ═══════════════════════════════════════════════════════════════════════════
 ```
 
@@ -490,7 +490,7 @@ Server Processing:
 3. Forwards to B (creates assumed TX stream)
 
 ┌──────────────┐        ┌──────────────┐        ┌──────────────┐
-│ Repeater A   │◄═══════│ HBlink4      │═══════►│ Repeater B   │
+│ Repeater A   │◄═══════│ IpswichSuite      │═══════►│ Repeater B   │
 │ Slot 1       │  RX    │ Server       │  TX    │ Slot 1       │
 │              │        │              │        │              │
 │ 🔴 RX ACTIVE │        │ Routing:     │        │ 🟡 TX ASSUMED│
@@ -550,7 +550,7 @@ Server Processing:
    ─ Decision: Clear B's assumed stream, allow C's real RX
 
 ┌──────────────┐        ┌──────────────┐        ┌──────────────┐
-│ Repeater A   │        │ HBlink4      │◄═══════│ Repeater C   │
+│ Repeater A   │        │ IpswichSuite      │◄═══════│ Repeater C   │
 │ Slot 1       │        │ Server       │  RX    │ Slot 1       │
 │              │        │              │        │              │
 │ 🟠 HANG TIME │        │ Processing:  │        │ 🔴 RX ACTIVE │
@@ -656,7 +656,7 @@ Remove B from ALL active streams' target sets
 
 Step 3: New State
 ─────────────────
-Repeater A             HBlink4 Server                Repeater B
+Repeater A             IpswichSuite Server                Repeater B
 ┌──────────────┐       ┌──────────────┐             ┌──────────────┐
 │              │       │ Route cache  │             │              │
 │ 🔴 RX ACTIVE │       │ for stream   │             │ �� RX ACTIVE │
@@ -914,13 +914,13 @@ Key Points:
 
 ---
 
-## Summary: Why HBlink4's Stream Tracking Excels
+## Summary: Why IpswichSuite's Stream Tracking Excels
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Feature Comparison                           │
 ├─────────────────────────┬───────────────────┬───────────────────┤
-│ Feature                 │ HBlink4           │ Other versions    │
+│ Feature                 │ IpswichSuite           │ Other versions    │
 ├─────────────────────────┼───────────────────┼───────────────────┤
 │ Stream End Detection    │ ~60ms (primary)   │ ~2000ms (timeout) │
 │                         │ +200ms (fast term)│  only             │
@@ -947,7 +947,7 @@ Key Points:
 │                         │ Sub-ms per packet │  network size     │
 └─────────────────────────┴───────────────────┴───────────────────┘
 
-Result: HBlink4 can scale to large networks while maintaining excellent
+Result: IpswichSuite can scale to large networks while maintaining excellent
         performance and correct DMR behavior in complex scenarios.
 ```
 
@@ -955,4 +955,4 @@ Result: HBlink4 can scale to large networks while maintaining excellent
 
 **Document Version**: 2.0  
 **Last Updated**: October 2025  
-**Corresponding Code**: HBlink4 v1.5+
+**Corresponding Code**: IpswichSuite v1.5+

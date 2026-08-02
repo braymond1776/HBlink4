@@ -1,5 +1,5 @@
 """
-Part 90 subscriber (radio ID) access control for HBlink4
+Part 90 subscriber (radio ID) access control for IpswichSuite
 
 Commercial (FCC Part 90) DMR networks are closed systems: only radios that
 have been provisioned by the system operator may transmit. This module
@@ -15,7 +15,7 @@ Concepts:
                   implicitly authorized by a fleet ID range.
 
 Enforcement modes (set in the subscriber file's "enforcement" section):
-    disabled    - No checks. Behaves exactly like pre-Part 90 HBlink4.
+    disabled    - No checks. Behaves exactly like pre-Part 90 IpswichSuite.
     permissive  - Checks run and violations are logged/recorded, but all
                   traffic is still passed. Use while building the fleet map
                   on a live system.
@@ -26,8 +26,8 @@ The subscriber file is hot-reloadable: edits are picked up automatically
 stolen radio disabled with zero downtime. A file that fails to parse never
 replaces the last known-good database.
 
-Copyright (C) 2025 HBlink4 Part 90 contributors
-License: GNU GPLv3 (as part of the HBlink4 combined work)
+Copyright (C) 2025-2026 Ipswich River Labs, LLC
+License: GNU GPLv3 (as part of the IpswichSuite combined work)
 """
 
 import json

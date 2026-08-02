@@ -1,7 +1,7 @@
 {
-    "server_name": "HBlink4 Server",
+    "server_name": "IpswichSuite Server",
     "server_description": "Amateur Radio DMR Network",
-    "dashboard_title": "HBlink4 Dashboard",
+    "dashboard_title": "IpswichSuite Dashboard",
     "announcement": {
         "enabled": false,
         "text": ""
@@ -19,7 +19,7 @@
         "host_ipv4": "127.0.0.1",
         "host_ipv6": "::1",
         "port": 8765,
-        "unix_socket": "/tmp/hblink4.sock",
+        "unix_socket": "/tmp/ipswichsuite.sock",
         "buffer_size": 65536
     }
 }

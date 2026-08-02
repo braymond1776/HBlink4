@@ -2,7 +2,7 @@
 Tests for DMR terminator frame detection using Homebrew Protocol (HBP) flags
 """
 import pytest
-from hblink4.hblink import HBProtocol
+from ipswichsuite.server import HBProtocol
 
 
 def test_voice_terminator_detection():

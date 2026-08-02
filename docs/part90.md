@@ -1,6 +1,6 @@
 # Part 90 Operation Guide
 
-HBlink4 can operate as the core of a **commercial (FCC Part 90) DMR network**.
+IpswichSuite can operate as the core of a **commercial (FCC Part 90) DMR network**.
 Where amateur networks are open by design - any radio with a valid ID can key
 up - a Part 90 system is a *closed* network: only radios provisioned by the
 system operator may transmit, each customer's traffic stays on that customer's
@@ -49,7 +49,7 @@ Then create the subscriber database:
 cp config/subscribers_sample.json config/subscribers.json
 ```
 
-If `enabled` is `true` and the file is missing or invalid, HBlink4 **refuses to
+If `enabled` is `true` and the file is missing or invalid, IpswichSuite **refuses to
 start** - a closed network must never come up unprotected by accident.
 
 ### The subscriber file

@@ -4,7 +4,7 @@ Unit tests for the access_control module
 
 import unittest
 import logging
-from hblink4.access_control import (
+from ipswichsuite.access_control import (
     RepeaterMatcher, RepeaterConfig, InvalidPatternError, BlacklistError
 )
 

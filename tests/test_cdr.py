@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta
 
-from hblink4.cdr import CDRWriter
+from ipswichsuite.cdr import CDRWriter
 
 
 class TestCDRWriter(unittest.TestCase):

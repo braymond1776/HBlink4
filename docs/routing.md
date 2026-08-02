@@ -2,7 +2,7 @@
 
 ## Overview
 
-HBlink4 implements configuration-based call routing using timeslot-specific talkgroup lists. This enables precise control over which calls are accepted from repeaters and forwarded to them.
+IpswichSuite implements configuration-based call routing using timeslot-specific talkgroup lists. This enables precise control over which calls are accepted from repeaters and forwarded to them.
 
 ## Configuration Structure
 
@@ -43,7 +43,7 @@ The same talkgroup lists control both **inbound** and **outbound** routing (symm
 
 ### Forwarding Assumption
 
-**Forwarding is always enabled** - that's the whole point of HBlink4! If a repeater has a TGID in its slot list, it will both accept traffic on that TS/TGID and receive forwarded traffic for that TS/TGID.
+**Forwarding is always enabled** - that's the whole point of IpswichSuite! If a repeater has a TGID in its slot list, it will both accept traffic on that TS/TGID and receive forwarded traffic for that TS/TGID.
 
 ### Default Behavior
 
@@ -54,7 +54,7 @@ This allows new repeaters to participate fully in the network without explicit c
 
 ## Assumed Slot State
 
-Since HBlink4 forwards calls to repeaters but doesn't receive real-time feedback about transmission state, we must **assume** the slot state on target repeaters:
+Since IpswichSuite forwards calls to repeaters but doesn't receive real-time feedback about transmission state, we must **assume** the slot state on target repeaters:
 
 ### Transmission Assumptions
 

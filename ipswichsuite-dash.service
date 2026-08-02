@@ -1,0 +1,25 @@
+[Unit]
+Description=IpswichSuite Dashboard
+After=network.target ipswichsuite.service
+Wants=ipswichsuite.service
+
+[Service]
+Type=simple
+User=ipswich
+Group=ipswich
+WorkingDirectory=/opt/ipswichsuite/dashboard
+ExecStart=/opt/ipswichsuite/venv/bin/python /opt/ipswichsuite/run_dashboard.py
+Restart=always
+RestartSec=10
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ipswichsuite-dash
+
+[Install]
+WantedBy=multi-user.target

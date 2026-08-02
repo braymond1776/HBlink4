@@ -1,6 +1,6 @@
-# HBlink4 Web Dashboard
+# IpswichSuite Web Dashboard
 
-Real-time monitoring dashboard for HBlink4 DMR server with modern look and feel.
+Real-time monitoring dashboard for IpswichSuite DMR server with modern look and feel.
 
 ## Features
 
@@ -21,7 +21,7 @@ Real-time monitoring dashboard for HBlink4 DMR server with modern look and feel.
 ## Configuration
 
 The dashboard uses two configuration files:
-- **HBlink4 config** (`config/config.json`) - Controls event sending
+- **IpswichSuite config** (`config/config.json`) - Controls event sending
 - **Dashboard config** (`dashboard/config.json`) - Controls dashboard behavior and event receiving
 
 Both configs must use the same transport settings (Unix socket for local, TCP for remote).
@@ -154,11 +154,11 @@ Real-time updates via WebSocket
 ## Troubleshooting
 
 **Dashboard shows "Disconnected"**
-- Check if HBlink4 is running
+- Check if IpswichSuite is running
 - Verify WebSocket connection in browser console
 
 **No events appearing**
-- Verify HBlink4 is running and repeaters are connected
+- Verify IpswichSuite is running and repeaters are connected
 - Check browser console for errors
 
 **WebSocket connection fails**
@@ -167,4 +167,4 @@ Real-time updates via WebSocket
 
 ## License
 
-Same as HBlink4: GNU GPLv3
+Same as IpswichSuite: GNU GPLv3
