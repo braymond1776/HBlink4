@@ -19,6 +19,15 @@
         "stream_hang_time": 10.0,
         "user_cache": {
             "timeout": 600
+        },
+        "subscriber_access": {
+            "enabled": false,
+            "file": "config/subscribers.json"
+        },
+        "cdr": {
+            "enabled": false,
+            "directory": "logs/cdr",
+            "retention_days": 90
         }
     },
     "dashboard": {

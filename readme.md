@@ -2,6 +2,8 @@
 
 HBlink4 is a DMR Server implementation using the HomeBrew protocol, developed by Cort Buffington, N0MJS. HBlink4 operates as an endpoint network server with granular per-repeater control and does not implement transit call-routing between DMR networks.
 
+In addition to amateur use, HBlink4 supports operation as a **closed commercial (FCC Part 90) network**: per-radio subscriber authorization against a fleet map, remote lockout of stolen or delinquent radios, per-fleet talkgroup isolation, and Call Detail Records for billing and audit. See the [Part 90 Operation Guide](docs/part90.md).
+
 ## Architecture
 
 HBlink4 focuses on being an efficient **endpoint network server** with the following design principles:
@@ -27,6 +29,8 @@ HBlink4 focuses on being an efficient **endpoint network server** with the follo
 - **User routing cache for efficient private call routing**
 - Pattern-based repeater configuration and blacklisting
 - Per-slot transmission management
+- **Part 90 subscriber access control** - fleet map with per-radio authorization, stolen-radio lockout, hot reload without restart
+- **Call Detail Records (CDR)** - daily JSONL call accounting for billing, capacity planning, and security audit
 
 ## Installation
 
@@ -83,6 +87,7 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[Dashboard README](dashboard/README.md)** - Dashboard features and usage
 - **[Systemd Service Installation](SYSTEMD.md)** - Production deployment with automatic startup
 - **[Connecting Repeaters](docs/connecting_to_hblink4.md)** - How to connect repeaters to HBlink4
+- **[Part 90 Operation Guide](docs/part90.md)** - Subscriber access control and Call Detail Records for commercial systems
 - **[Stream Tracking](docs/stream_tracking.md)** - How DMR transmission streams are managed
 - **[Hang Time](docs/hang_time.md)** - Preventing conversation interruption
 - **[Protocol Specification](docs/protocol.md)** - HomeBrew DMR protocol details

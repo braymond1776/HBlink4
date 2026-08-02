@@ -35,6 +35,15 @@ The `global` section contains server-wide settings that control the basic operat
         "stream_hang_time": 10.0,
         "user_cache": {
             "timeout": 600
+        },
+        "subscriber_access": {
+            "enabled": false,
+            "file": "config/subscribers.json"
+        },
+        "cdr": {
+            "enabled": false,
+            "directory": "logs/cdr",
+            "retention_days": 90
         }
     }
 }
@@ -56,10 +65,17 @@ The `global` section contains server-wide settings that control the basic operat
 | `stream_timeout` | float | Fallback timeout when terminator frame is lost (default: 2.0 seconds) |
 | `stream_hang_time` | float | Seconds to reserve slot for same source after stream ends (default: 10.0-20.0 seconds) |
 | `user_cache.timeout` | number | Seconds before user cache entries expire (default: 600, minimum: 60) |
+| `subscriber_access.enabled` | boolean | Enable the Part 90 subscriber access control layer (default: false) |
+| `subscriber_access.file` | string | Path to the subscriber/fleet database file (default: config/subscribers.json) |
+| `cdr.enabled` | boolean | Enable Call Detail Records (default: false) |
+| `cdr.directory` | string | Directory for daily CDR files (default: logs/cdr) |
+| `cdr.retention_days` | number | Days to keep CDR files, 0 = keep forever (default: 90) |
 
 **Note on IPv6**: HBlink4 is dual-stack native and will bind to both IPv4 and IPv6 by default. If your network appears to support IPv6 but connections don't establish properly (a common issue with misconfigured IPv6), set `disable_ipv6: true` to force IPv4-only mode.
 
 **User Cache**: The user cache tracks the last known repeater for each DMR ID to enable efficient private call routing. Entries are automatically cleaned up every 60 seconds. The timeout must be at least 60 seconds.
+
+**Subscriber Access Control & CDR**: These two features form the Part 90 (commercial) operation layer - per-radio authorization against a fleet map, and per-call accounting records. They are documented in detail in the [Part 90 Operation Guide](part90.md).
 
 ### Dual-Stack IPv6 Support
 
