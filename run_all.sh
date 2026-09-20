@@ -1,5 +1,5 @@
 #!/bin/bash
-# Start both HBlink4 server and dashboard
+# Start both IpswichSuite server and dashboard
 # Usage: ./run_all.sh
 
 set -e
@@ -39,7 +39,7 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
-echo -e "${GREEN}Starting HBlink4 services...${NC}"
+echo -e "${GREEN}Starting IpswichSuite services...${NC}"
 echo
 
 # Start dashboard in background
@@ -50,18 +50,18 @@ DASHBOARD_PID=$!
 # Give dashboard time to start
 sleep 2
 
-# Start HBlink4 server
-echo -e "${BLUE}Starting HBlink4 server...${NC}"
+# Start IpswichSuite server
+echo -e "${BLUE}Starting IpswichSuite server...${NC}"
 python3 run.py &
-HBLINK_PID=$!
+SERVER_PID=$!
 
 echo
 echo -e "${GREEN}Services started:${NC}"
 echo -e "  Dashboard: http://localhost:8080 (PID: $DASHBOARD_PID)"
-echo -e "  HBlink4:   UDP port 54000 (PID: $HBLINK_PID)"
+echo -e "  IpswichSuite: UDP port 62031 (PID: $SERVER_PID)"
 echo
 echo -e "${YELLOW}Press CTRL+C to stop all services${NC}"
 echo
 
 # Wait for processes
-wait $HBLINK_PID $DASHBOARD_PID
+wait $SERVER_PID $DASHBOARD_PID

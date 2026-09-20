@@ -1,8 +1,8 @@
-# HBlink4 Stream Tracking System
+# IpswichSuite Stream Tracking System
 
 ## Overview
 
-The stream tracking system is the core of HBlink4's DMR traffic management, providing per-slot per-repeater transmission state tracking with sophisticated contention handling and intelligent routing. This system enables HBlink4 to correctly manage simultaneous transmissions, prevent slot hijacking, and efficiently forward traffic between repeaters.
+The stream tracking system is the core of IpswichSuite's DMR traffic management, providing per-slot per-repeater transmission state tracking with sophisticated contention handling and intelligent routing. This system enables IpswichSuite to correctly manage simultaneous transmissions, prevent slot hijacking, and efficiently forward traffic between repeaters.
 
 **Key Capabilities:**
 - **Fast Terminator Detection**: Streams end in ~60ms (primary method) vs 2000ms timeout (fallback)
@@ -404,7 +404,7 @@ Result: ✅ C successfully uses B slot 1 because:
 
 ### Per-Stream Routing Cache
 
-HBlink4 uses a "calculate-once, forward-many" approach:
+IpswichSuite uses a "calculate-once, forward-many" approach:
 
 **At stream start** (`_calculate_stream_targets`):
 1. Extract talkgroup from `dst_id`
@@ -525,7 +525,7 @@ INFO - RX stream started on repeater 312100 slot 1: src=312567, dst=3121, stream
 
 ## Private Call Routing
 
-HBlink4 uses a user cache to enable efficient private call routing.
+IpswichSuite uses a user cache to enable efficient private call routing.
 
 **User Cache:**
 - Tracks last known repeater for each DMR ID
@@ -634,7 +634,7 @@ Stream tracking respects repeater configuration patterns and talkgroup access co
 
 ## Logging
 
-HBlink4 provides comprehensive logging of stream activity:
+IpswichSuite provides comprehensive logging of stream activity:
 
 ### Stream Start (RX)
 ```
@@ -748,33 +748,33 @@ Stream tracking emits real-time events to the dashboard:
 - Traffic statistics and analytics
 - Network health monitoring
 
-## What Sets HBlink4 Apart
+## What Sets IpswichSuite Apart
 
-HBlink4's stream tracking system provides capabilities that surpass other DMR server implementations:
+IpswichSuite's stream tracking system provides capabilities that surpass other DMR server implementations:
 
 ### 1. Fast Terminator Detection
-- **HBlink4**: ~60ms stream end detection (primary method)
+- **IpswichSuite**: ~60ms stream end detection (primary method)
 - **Others**: ~2000ms timeout-only detection
 - **Benefit**: Near-instant slot availability, better user experience
 
 ### 2. Sophisticated Hang Time Protection
-- **HBlink4**: 4 distinct rules (same user, user switch TG, join conversation, hijacking prevention)
+- **IpswichSuite**: 4 distinct rules (same user, user switch TG, join conversation, hijacking prevention)
 - **Others**: Simple timeout or no protection
 - **Benefit**: Prevents hijacking while allowing natural conversations and fast TG switching
 
 ### 3. Per-Stream Routing Cache
-- **HBlink4**: Calculate-once, forward-many with O(1) decisions
+- **IpswichSuite**: Calculate-once, forward-many with O(1) decisions
 - **Others**: Per-packet routing calculations
 - **Benefit**: Massively improved performance on large networks
 
 ### 4. RX/TX Contention Handling
-- **HBlink4**: Automatic route-cache removal, bandwidth optimization
+- **IpswichSuite**: Automatic route-cache removal, bandwidth optimization
 - **Others**: Continue sending to busy repeaters
 - **Benefit**: Significant bandwidth savings on multi-repeater networks
 
 ### 5. Real vs Assumed Stream Priority
-- **HBlink4**: Real RX always wins over assumed TX
+- **IpswichSuite**: Real RX always wins over assumed TX
 - **Others**: May not distinguish or handle poorly
 - **Benefit**: Correct behavior when repeaters start receiving
 
-These capabilities enable HBlink4 to scale to large networks (100+ repeaters) while maintaining excellent performance and correct DMR behavior in complex contention scenarios.
+These capabilities enable IpswichSuite to scale to large networks (100+ repeaters) while maintaining excellent performance and correct DMR behavior in complex contention scenarios.

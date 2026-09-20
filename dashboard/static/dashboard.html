@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HBlink4 Dashboard</title>
+    <title>IpswichSuite Dashboard</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -722,16 +722,16 @@
     <div class="container">
         <header>
             <div class="header-branding">
-                <img src="/static/HBlink.png" alt="HBlink" class="logo">
+                <img src="/static/logo.svg" alt="IpswichSuite" class="logo">
                 <div>
-                    <h1 id="dashboardTitle">HBlink4 Dashboard</h1>
+                    <h1 id="dashboardTitle">IpswichSuite Dashboard</h1>
                     <div style="color: #64748b; font-size: 14px; margin-top: 4px;" id="serverName"></div>
                 </div>
             </div>
             <div class="status-badges">
                 <a class="network-info-btn" id="networkInfoBtn" style="display: none;" target="_blank">🌐 Network Info</a>
                 <div class="connection-status clickable warning" id="wsStatus" title="Connecting to dashboard server...">Connecting...</div>
-                <div class="connection-status warning" id="hblinkStatus" title="Waiting for connection status...">Unknown</div>
+                <div class="connection-status warning" id="serverStatus" title="Waiting for connection status...">Unknown</div>
                 <div class="audio-toggle disabled" id="audioToggle" title="Click to enable audio notifications">🔇 Audio Off</div>
             </div>
         </header>
@@ -896,8 +896,8 @@
                 state.config = config;
                 
                 // Update page title and server name
-                document.title = config.dashboard_title || 'HBlink4 Dashboard';
-                document.getElementById('dashboardTitle').textContent = config.dashboard_title || 'HBlink4 Dashboard';
+                document.title = config.dashboard_title || 'IpswichSuite Dashboard';
+                document.getElementById('dashboardTitle').textContent = config.dashboard_title || 'IpswichSuite Dashboard';
                 document.getElementById('serverName').textContent = config.server_name || '';
                 
                 // Show announcement banner if enabled and text exists
@@ -934,8 +934,8 @@
             ws.onclose = () => {
                 console.log('WebSocket disconnected');
                 updateWebSocketStatus(false);
-                // When we lose WebSocket, we also can't know HBlink status
-                updateHBlinkStatus(false);
+                // When we lose WebSocket, we also can't know server status
+                updateServerStatus(false);
                 // Reconnect after 3 seconds
                 reconnectTimeout = setTimeout(connectWebSocket, 3000);
             };
@@ -944,7 +944,7 @@
                 console.error('WebSocket error:', error);
                 // Update UI immediately on error
                 updateWebSocketStatus(false);
-                updateHBlinkStatus(false);
+                updateServerStatus(false);
             };
             
             ws.onmessage = (event) => {
@@ -966,18 +966,18 @@
                     state.stats = data.data.stats;
                     state.last_heard = data.data.last_heard || [];
                     
-                    // Update HBlink connection status
-                    updateHBlinkStatus(data.data.hblink_connected || false);
+                    // Update server connection status
+                    updateServerStatus(data.data.server_connected || false);
                     
                     updateRepeaters(state.repeaters);
                     updateStreams(state.streams);
                     updateEvents(state.events);
                     updateStats(state.stats, state.repeaters, state.streams);
                     updateLastHeard(state.last_heard);
-                } else if (data.type === 'hblink_status') {
-                    // HBlink4 connection status changed
-                    console.log('HBlink4 connection status:', data.data.connected ? 'connected' : 'disconnected');
-                    updateHBlinkStatus(data.data.connected);
+                } else if (data.type === 'server_status') {
+                    // IpswichSuite connection status changed
+                    console.log('IpswichSuite connection status:', data.data.connected ? 'connected' : 'disconnected');
+                    updateServerStatus(data.data.connected);
                 } else if (data.type === 'stats_reset') {
                     // Midnight reset - update stats immediately
                     state.stats = data.data;
@@ -1241,8 +1241,8 @@
             }
         }
         
-        function updateHBlinkStatus(connected) {
-            const el = document.getElementById('hblinkStatus');
+        function updateServerStatus(connected) {
+            const el = document.getElementById('serverStatus');
             
             if (connected) {
                 el.textContent = '✓ DMR Server';
@@ -1254,20 +1254,20 @@
                 el.title = 'DMR Server: Dashboard is not connected to the DMR server';
                 
                 // Clear stale data from display
-                console.log('🧹 Clearing stale data - HBlink4 disconnected');
+                console.log('🧹 Clearing stale data - IpswichSuite disconnected');
                 state.repeaters = {};
                 state.streams = [];
                 
                 // Clear repeaters display
                 const repeatersList = document.getElementById('repeatersList');
                 if (repeatersList) {
-                    repeatersList.innerHTML = '<div style="color: #94a3b8; padding: 20px; text-align: center;">Dashboard not connected to HBlink4</div>';
+                    repeatersList.innerHTML = '<div style="color: #94a3b8; padding: 20px; text-align: center;">Dashboard not connected to IpswichSuite</div>';
                 }
                 
                 // Clear events display
                 const eventsList = document.getElementById('eventsList');
                 if (eventsList) {
-                    eventsList.innerHTML = '<div class="event-item">Waiting for HBlink4 connection...</div>';
+                    eventsList.innerHTML = '<div class="event-item">Waiting for IpswichSuite connection...</div>';
                 }
                 
                 // Clear last heard display
@@ -1872,7 +1872,7 @@
             }
         });
         
-        // HBlink4 badge is not clickable - it's just a status indicator
+        // IpswichSuite badge is not clickable - it's just a status indicator
         // Users can't control the server-side connection from the browser
         
         // Set up audio toggle button

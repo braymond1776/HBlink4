@@ -1,6 +1,6 @@
-# HBlink4 Configuration Guide
+# IpswichSuite Configuration Guide
 
-HBlink4 uses a JSON configuration file to define server settings, repeater access control rules, and talkgroup definitions. This guide explains each configuration section and its options.
+IpswichSuite uses a JSON configuration file to define server settings, repeater access control rules, and talkgroup definitions. This guide explains each configuration section and its options.
 
 ## Configuration File Structure
 
@@ -13,7 +13,7 @@ The configuration file consists of five main sections:
 
 ## Global Settings
 
-The `global` section contains server-wide settings that control the basic operation of HBlink4.
+The `global` section contains server-wide settings that control the basic operation of IpswichSuite.
 
 ```json
 {
@@ -26,7 +26,7 @@ The `global` section contains server-wide settings that control the basic operat
         "port_ipv4": 62031,
         "port_ipv6": 62031,
         "logging": {
-            "file": "logs/hblink.log",
+            "file": "logs/ipswichsuite.log",
             "console_level": "INFO",
             "file_level": "DEBUG",
             "retention_days": 30
@@ -35,6 +35,15 @@ The `global` section contains server-wide settings that control the basic operat
         "stream_hang_time": 10.0,
         "user_cache": {
             "timeout": 600
+        },
+        "subscriber_access": {
+            "enabled": false,
+            "file": "config/subscribers.json"
+        },
+        "cdr": {
+            "enabled": false,
+            "directory": "logs/cdr",
+            "retention_days": 90
         }
     }
 }
@@ -56,14 +65,21 @@ The `global` section contains server-wide settings that control the basic operat
 | `stream_timeout` | float | Fallback timeout when terminator frame is lost (default: 2.0 seconds) |
 | `stream_hang_time` | float | Seconds to reserve slot for same source after stream ends (default: 10.0-20.0 seconds) |
 | `user_cache.timeout` | number | Seconds before user cache entries expire (default: 600, minimum: 60) |
+| `subscriber_access.enabled` | boolean | Enable the Part 90 subscriber access control layer (default: false) |
+| `subscriber_access.file` | string | Path to the subscriber/fleet database file (default: config/subscribers.json) |
+| `cdr.enabled` | boolean | Enable Call Detail Records (default: false) |
+| `cdr.directory` | string | Directory for daily CDR files (default: logs/cdr) |
+| `cdr.retention_days` | number | Days to keep CDR files, 0 = keep forever (default: 90) |
 
-**Note on IPv6**: HBlink4 is dual-stack native and will bind to both IPv4 and IPv6 by default. If your network appears to support IPv6 but connections don't establish properly (a common issue with misconfigured IPv6), set `disable_ipv6: true` to force IPv4-only mode.
+**Note on IPv6**: IpswichSuite is dual-stack native and will bind to both IPv4 and IPv6 by default. If your network appears to support IPv6 but connections don't establish properly (a common issue with misconfigured IPv6), set `disable_ipv6: true` to force IPv4-only mode.
 
 **User Cache**: The user cache tracks the last known repeater for each DMR ID to enable efficient private call routing. Entries are automatically cleaned up every 60 seconds. The timeout must be at least 60 seconds.
 
+**Subscriber Access Control & CDR**: These two features form the Part 90 (commercial) operation layer - per-radio authorization against a fleet map, and per-call accounting records. They are documented in detail in the [Part 90 Operation Guide](part90.md).
+
 ### Dual-Stack IPv6 Support
 
-HBlink4 is **dual-stack native** and can listen on both IPv4 and IPv6 simultaneously:
+IpswichSuite is **dual-stack native** and can listen on both IPv4 and IPv6 simultaneously:
 
 - Set `bind_ipv4` to `"0.0.0.0"` to listen on all IPv4 interfaces
 - Set `bind_ipv6` to `"::"` to listen on all IPv6 interfaces
@@ -113,7 +129,7 @@ The `dashboard` section is a **top-level** configuration (not nested under `glob
         "host_ipv4": "127.0.0.1",
         "host_ipv6": "::1",
         "port": 8765,
-        "unix_socket": "/tmp/hblink4.sock",
+        "unix_socket": "/tmp/ipswichsuite.sock",
         "buffer_size": 65536
     }
 }
@@ -127,7 +143,7 @@ The `dashboard` section is a **top-level** configuration (not nested under `glob
 | `host_ipv4` | string | IPv4 address for TCP transport (e.g., "127.0.0.1") |
 | `host_ipv6` | string | IPv6 address for TCP transport (e.g., "::1") |
 | `port` | number | Port number for TCP transport (default: 8765) |
-| `unix_socket` | string | Unix socket path for Unix transport (default: "/tmp/hblink4.sock") |
+| `unix_socket` | string | Unix socket path for Unix transport (default: "/tmp/ipswichsuite.sock") |
 | `buffer_size` | number | Socket send buffer size (default: 65536) |
 
 ### Transport Options
@@ -137,7 +153,7 @@ The `dashboard` section is a **top-level** configuration (not nested under `glob
 - ✅ Same-host only (most secure)
 - ✅ Automatic cleanup on startup
 - ✅ File permissions control access
-- **Use when**: Dashboard runs on same server as HBlink4
+- **Use when**: Dashboard runs on same server as IpswichSuite
 - **Configuration**: Only `unix_socket` path is used (host and port fields ignored)
 
 **TCP (`"tcp"`)** - Required for remote dashboard:
@@ -150,7 +166,7 @@ The `dashboard` section is a **top-level** configuration (not nested under `glob
 
 **TCP Dual-Stack Configuration:**
 
-When using TCP transport with HBlink4 and dashboard on **different machines**, you have the same dual-stack options as the main UDP server:
+When using TCP transport with IpswichSuite and dashboard on **different machines**, you have the same dual-stack options as the main UDP server:
 
 ```json
 // Localhost (both on same machine) - NO dual-stack issues
@@ -174,7 +190,7 @@ When using TCP transport with HBlink4 and dashboard on **different machines**, y
 "port": 8765,
 ```
 
-**Note**: HBlink4's event emitter tries IPv6 first, then falls back to IPv4 automatically, so dual-stack configuration on the dashboard side works seamlessly.
+**Note**: IpswichSuite's event emitter tries IPv6 first, then falls back to IPv4 automatically, so dual-stack configuration on the dashboard side works seamlessly.
 
 ### Dashboard Configuration Examples
 
@@ -183,7 +199,7 @@ When using TCP transport with HBlink4 and dashboard on **different machines**, y
 "dashboard": {
     "enabled": true,
     "transport": "unix",
-    "unix_socket": "/tmp/hblink4.sock"
+    "unix_socket": "/tmp/ipswichsuite.sock"
 }
 ```
 
@@ -220,7 +236,7 @@ When using TCP transport with HBlink4 and dashboard on **different machines**, y
 }
 ```
 
-**Important**: Both HBlink4 config (`config/config.json`) and dashboard config (`dashboard/config.json`) must use the **same transport type and connection details**. See [Dashboard Documentation](../dashboard/README.md) for dashboard-side configuration.
+**Important**: Both IpswichSuite config (`config/config.json`) and dashboard config (`dashboard/config.json`) must use the **same transport type and connection details**. See [Dashboard Documentation](../dashboard/README.md) for dashboard-side configuration.
 
 ### Stream Management
 
@@ -551,4 +567,4 @@ The `talkgroups` section defines available talkgroups and their properties.
 
 ## Example Configuration
 
-See the `config/hblink.json` file in the repository for a complete example configuration with multiple patterns and talkgroups.
+See the `config/config_sample.json` file in the repository for a complete example configuration with multiple patterns and talkgroups.

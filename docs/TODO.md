@@ -1,7 +1,7 @@
-# HBlink4 TODO List
+# IpswichSuite TODO List
 
 ## Overview
-This document tracks planned features and enhancements for HBlink4. Items are prioritized by importance and feasibility.
+This document tracks planned features and enhancements for IpswichSuite. Items are prioritized by importance and feasibility.
 
 ## Ongoing Priority (Continuous)
 

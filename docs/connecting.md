@@ -1,12 +1,12 @@
-# Connecting to HBlink4
+# Connecting to IpswichSuite
 
-This guide explains how to connect repeaters and hotspots to an HBlink4 server.
+This guide explains how to connect repeaters and hotspots to an IpswichSuite server.
 
 ## Required Information
 
-To connect to an HBlink4 server, you need:
+To connect to an IpswichSuite server, you need:
 
-- **Server IP/Hostname**: The address of the HBlink4 server
+- **Server IP/Hostname**: The address of the IpswichSuite server
 - **Server Port**: Default is 62031 (IPv4) and/or 62032 (IPv6)
 - **Repeater ID**: Your DMR radio ID (32-bit integer)
 - **Passkey**: Authentication key (provided by server administrator)
@@ -57,12 +57,12 @@ Some repeater software (like Pi-Star, WPSD) allows you to configure which talkgr
 
 **For MMDVM.ini or DMRGateway.ini:**
 
-Add the `Options=` line to your HBlink/Homebrew server configuration section:
+Add the `Options=` line to your IpswichSuite (Homebrew protocol) server configuration section:
 
 ```ini
 [DMR Network 1]
 Enabled=1
-Address=hblink.example.com
+Address=ipswichsuite.example.com
 Port=62031
 Password=your-passkey
 Options=TS1=1,2,3;TS2=10,20,30
@@ -189,7 +189,7 @@ If you need assistance:
 1. **Check your repeater/hotspot software logs** for error messages
 2. **Contact your server administrator** - they can see detailed connection logs
 3. **Check Pi-Star/WPSD forums** if using those platforms
-4. **Review HBlink4 documentation**: https://github.com/n0mjs710/HBlink4
+4. **Review IpswichSuite documentation**: https://github.com/n0mjs710/IpswichSuite
 
 ## Quick Reference
 

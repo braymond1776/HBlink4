@@ -1,5 +1,5 @@
 """
-HBlink4 Dashboard - Separate Process
+IpswichSuite Dashboard - Separate Process
 FastAPI + Uvicorn + WebSockets for real-time monitoring
 
 Updates every 10 superframes (60 packets = 1 second) for smooth real-time feel
@@ -25,7 +25,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="HBlink4 Dashboard", version="1.0.0")
+app = FastAPI(title="IpswichSuite Dashboard", version="1.0.0")
 
 # Load user database from CSV
 def load_user_database() -> Dict[int, str]:
@@ -65,16 +65,16 @@ def load_config() -> dict:
     """Load dashboard configuration from config.json"""
     config_path = Path(__file__).parent / "config.json"
     default_config = {
-        "server_name": "HBlink4 Server",
+        "server_name": "IpswichSuite Server",
         "server_description": "Amateur Radio DMR Network",
-        "dashboard_title": "HBlink4 Dashboard",
+        "dashboard_title": "IpswichSuite Dashboard",
         "refresh_interval": 1000,
         "max_events": 50,
         "event_receiver": {
             "transport": "unix",
             "host": "127.0.0.1",
             "port": 8765,
-            "unix_socket": "/tmp/hblink4.sock",
+            "unix_socket": "/tmp/ipswichsuite.sock",
             "ipv6": False,
             "buffer_size": 65536
         }
@@ -112,7 +112,7 @@ class DashboardState:
         self.last_heard: List[dict] = []  # Last heard users
         self.last_heard_stats: dict = {}  # User cache statistics
         self.websocket_clients: Set[WebSocket] = set()
-        self.hblink_connected: bool = False  # Track HBlink4 connection status
+        self.server_connected: bool = False  # Track IpswichSuite connection status
         self.stats = {
             'total_calls_today': 0,      # Total RX calls (streams) received today
             'total_duration_today': 0.0,  # Total duration of RX streams only (seconds)
@@ -339,11 +339,11 @@ class DashboardState:
 state = DashboardState()
 
 
-async def broadcast_hblink_status(connected: bool):
-    """Broadcast HBlink4 connection status to all WebSocket clients"""
-    state.hblink_connected = connected
+async def broadcast_server_status(connected: bool):
+    """Broadcast IpswichSuite connection status to all WebSocket clients"""
+    state.server_connected = connected
     message = {
-        'type': 'hblink_status',
+        'type': 'server_status',
         'data': {
             'connected': connected,
             'timestamp': datetime.now().isoformat()
@@ -356,7 +356,7 @@ async def broadcast_hblink_status(connected: bool):
         try:
             await client.send_json(message)
             
-            # If HBlink just connected, also send full current state to ensure browser has everything
+            # If the server just connected, also send full current state to ensure browser has everything
             if connected:
                 await client.send_json({
                     'type': 'initial_state',
@@ -367,7 +367,7 @@ async def broadcast_hblink_status(connected: bool):
                         'events': list(state.events)[-50:],
                         'stats': state.stats,
                         'last_heard': state.last_heard,
-                        'hblink_connected': state.hblink_connected
+                        'server_connected': state.server_connected
                     }
                 })
         except Exception as e:
@@ -379,7 +379,7 @@ async def broadcast_hblink_status(connected: bool):
 
 
 class TCPProtocol(asyncio.Protocol):
-    """TCP protocol handler for receiving events from hblink4"""
+    """TCP protocol handler for receiving events from ipswichsuite"""
     
     def __init__(self, callback):
         self.callback = callback
@@ -389,30 +389,30 @@ class TCPProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         """Called when TCP connection established"""
         peername = transport.get_extra_info('peername')
-        logger.info(f"✅ HBlink4 connected via TCP from {peername}")
+        logger.info(f"✅ IpswichSuite connected via TCP from {peername}")
         self.transport = transport
         
         # Clear dashboard state on reconnect
-        # HBlink4 will re-send all current repeaters via repeater_connected events
-        logger.info("🔄 Clearing dashboard state - requesting HBlink4 state sync")
+        # IpswichSuite will re-send all current repeaters via repeater_connected events
+        logger.info("🔄 Clearing dashboard state - requesting IpswichSuite state sync")
         state.repeaters.clear()
         state.streams.clear()
         
         # Set connection status synchronously (async broadcast may be delayed)
-        state.hblink_connected = True
+        state.server_connected = True
         
-        # Send sync request to HBlink4 to trigger initial state send
+        # Send sync request to IpswichSuite to trigger initial state send
         try:
             sync_request = json.dumps({'type': 'sync_request'}).encode('utf-8')
             length = len(sync_request)
             frame = length.to_bytes(4, byteorder='big') + sync_request
             transport.write(frame)
-            logger.info("📤 Sent sync_request to HBlink4")
+            logger.info("📤 Sent sync_request to IpswichSuite")
         except Exception as e:
             logger.error(f"Failed to send sync_request: {e}")
         
-        # Notify all browser clients that HBlink4 is connected
-        asyncio.create_task(broadcast_hblink_status(True))
+        # Notify all browser clients that IpswichSuite is connected
+        asyncio.create_task(broadcast_server_status(True))
     
     def data_received(self, data):
         """Called when TCP data received (handles framing)"""
@@ -437,19 +437,19 @@ class TCPProtocol(asyncio.Protocol):
     def connection_lost(self, exc):
         """Called when TCP connection lost"""
         if exc:
-            logger.warning(f"⚠️ HBlink4 TCP connection lost: {exc}")
+            logger.warning(f"⚠️ IpswichSuite TCP connection lost: {exc}")
         else:
-            logger.info("HBlink4 TCP connection closed")
+            logger.info("IpswichSuite TCP connection closed")
         
         # Set connection status synchronously (async broadcast may be delayed)
-        state.hblink_connected = False
+        state.server_connected = False
         
-        # Notify all browser clients that HBlink4 is disconnected
-        asyncio.create_task(broadcast_hblink_status(False))
+        # Notify all browser clients that IpswichSuite is disconnected
+        asyncio.create_task(broadcast_server_status(False))
 
 
 class UnixProtocol(asyncio.Protocol):
-    """Unix socket protocol handler for receiving events from hblink4"""
+    """Unix socket protocol handler for receiving events from ipswichsuite"""
     
     def __init__(self, callback):
         self.callback = callback
@@ -458,30 +458,30 @@ class UnixProtocol(asyncio.Protocol):
     
     def connection_made(self, transport):
         """Called when Unix socket connection established"""
-        logger.info(f"✅ HBlink4 connected via Unix socket")
+        logger.info(f"✅ IpswichSuite connected via Unix socket")
         self.transport = transport
         
         # Clear dashboard state on reconnect
-        # HBlink4 will re-send all current repeaters via repeater_connected events
-        logger.info("🔄 Clearing dashboard state - requesting HBlink4 state sync")
+        # IpswichSuite will re-send all current repeaters via repeater_connected events
+        logger.info("🔄 Clearing dashboard state - requesting IpswichSuite state sync")
         state.repeaters.clear()
         state.streams.clear()
         
         # Set connection status synchronously (async broadcast may be delayed)
-        state.hblink_connected = True
+        state.server_connected = True
         
-        # Send sync request to HBlink4 to trigger initial state send
+        # Send sync request to IpswichSuite to trigger initial state send
         try:
             sync_request = json.dumps({'type': 'sync_request'}).encode('utf-8')
             length = len(sync_request)
             frame = length.to_bytes(4, byteorder='big') + sync_request
             transport.write(frame)
-            logger.info("📤 Sent sync_request to HBlink4")
+            logger.info("📤 Sent sync_request to IpswichSuite")
         except Exception as e:
             logger.error(f"Failed to send sync_request: {e}")
         
-        # Notify all browser clients that HBlink4 is connected
-        asyncio.create_task(broadcast_hblink_status(True))
+        # Notify all browser clients that IpswichSuite is connected
+        asyncio.create_task(broadcast_server_status(True))
     
     def data_received(self, data):
         """Called when data received (handles framing)"""
@@ -506,22 +506,22 @@ class UnixProtocol(asyncio.Protocol):
     def connection_lost(self, exc):
         """Called when Unix socket connection lost"""
         if exc:
-            logger.warning(f"⚠️ HBlink4 Unix socket connection lost: {exc}")
+            logger.warning(f"⚠️ IpswichSuite Unix socket connection lost: {exc}")
         else:
-            logger.info("HBlink4 Unix socket connection closed")
+            logger.info("IpswichSuite Unix socket connection closed")
         
         # Set connection status synchronously (async broadcast may be delayed)
-        state.hblink_connected = False
+        state.server_connected = False
         
-        # Notify all browser clients that HBlink4 is disconnected
-        asyncio.create_task(broadcast_hblink_status(False))
+        # Notify all browser clients that IpswichSuite is disconnected
+        asyncio.create_task(broadcast_server_status(False))
 
 
 class EventReceiver:
-    """Receives events from hblink4 via TCP or Unix socket"""
+    """Receives events from ipswichsuite via TCP or Unix socket"""
     
     def __init__(self, transport='unix', host_ipv4='127.0.0.1', host_ipv6='::1',
-                 port=8765, unix_socket='/tmp/hblink4.sock', disable_ipv6=False):
+                 port=8765, unix_socket='/tmp/ipswichsuite.sock', disable_ipv6=False):
         """
         Initialize event receiver with transport abstraction
         
@@ -546,7 +546,7 @@ class EventReceiver:
         self.server_v6 = None
     
     async def start(self):
-        """Start receiving events from hblink4"""
+        """Start receiving events from ipswichsuite"""
         loop = asyncio.get_event_loop()
         
         if self.transport == 'tcp':
@@ -567,7 +567,7 @@ class EventReceiver:
                     self.host_ipv4, self.port,
                     family=socket.AF_INET
                 )
-                logger.info(f"✓ Listening for HBlink4 events via TCP on {self.host_ipv4}:{self.port} (IPv4)")
+                logger.info(f"✓ Listening for IpswichSuite events via TCP on {self.host_ipv4}:{self.port} (IPv4)")
             except Exception as e:
                 logger.error(f"✗ Failed to start IPv4 TCP listener: {e}")
         
@@ -579,7 +579,7 @@ class EventReceiver:
                     self.host_ipv6, self.port,
                     family=socket.AF_INET6
                 )
-                logger.info(f"✓ Listening for HBlink4 events via TCP on [{self.host_ipv6}]:{self.port} (IPv6)")
+                logger.info(f"✓ Listening for IpswichSuite events via TCP on [{self.host_ipv6}]:{self.port} (IPv6)")
             except Exception as e:
                 logger.error(f"✗ Failed to start IPv6 TCP listener: {e}")
     
@@ -604,10 +604,10 @@ class EventReceiver:
         except Exception as e:
             logger.warning(f"Failed to set socket permissions: {e}")
         
-        logger.info(f"📡 Listening for HBlink4 events via Unix socket at {self.unix_socket}")
+        logger.info(f"📡 Listening for IpswichSuite events via Unix socket at {self.unix_socket}")
     
     async def process_event(self, data: bytes):
-        """Process incoming event from hblink4"""
+        """Process incoming event from ipswichsuite"""
         try:
             event = json.loads(data.decode('utf-8'))
             await self.handle_event(event)
@@ -837,7 +837,7 @@ async def get_repeater_details(repeater_id: int):
             # Import here to avoid circular dependencies
             import sys
             sys.path.insert(0, str(Path(__file__).parent.parent))
-            from hblink4.access_control import RepeaterMatcher
+            from ipswichsuite.access_control import RepeaterMatcher
             
             matcher = RepeaterMatcher(config)
             pattern = matcher.get_pattern_for_repeater(repeater_id, repeater.get('callsign'))
@@ -931,7 +931,7 @@ async def websocket_endpoint(websocket: WebSocket):
     logger.info(f"🌐 WebSocket client connected (total: {len(state.websocket_clients)})")
     
     # Log current state for debugging
-    logger.info(f"📊 Sending initial_state: hblink_connected={state.hblink_connected}, repeaters={len(state.repeaters)}, streams={len(state.streams)}")
+    logger.info(f"📊 Sending initial_state: server_connected={state.server_connected}, repeaters={len(state.repeaters)}, streams={len(state.streams)}")
     
     # Send initial state
     await websocket.send_json({
@@ -943,7 +943,7 @@ async def websocket_endpoint(websocket: WebSocket):
             'events': list(state.events)[-50:],
             'stats': state.stats,
             'last_heard': state.last_heard,
-            'hblink_connected': state.hblink_connected
+            'server_connected': state.server_connected
         }
     })
     
@@ -984,12 +984,12 @@ async def startup_event():
         host_ipv4=receiver_config.get('host_ipv4', '127.0.0.1'),
         host_ipv6=receiver_config.get('host_ipv6', '::1'),
         port=receiver_config.get('port', 8765),
-        unix_socket=receiver_config.get('unix_socket', '/tmp/hblink4.sock'),
+        unix_socket=receiver_config.get('unix_socket', '/tmp/ipswichsuite.sock'),
         disable_ipv6=receiver_config.get('disable_ipv6', False)
     )
     asyncio.create_task(receiver.start())
     asyncio.create_task(midnight_reset_task())
-    logger.info("🚀 HBlink4 Dashboard started!")
+    logger.info("🚀 IpswichSuite Dashboard started!")
     logger.info(f"📡 Event transport: {receiver_config.get('transport', 'unix').upper()}")
     logger.info("📊 Access dashboard at http://localhost:8080")
 

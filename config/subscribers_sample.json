@@ -1,0 +1,43 @@
+{
+    "enforcement": {
+        "mode": "permissive",
+        "reload_interval": 60
+    },
+    "fleets": [
+        {
+            "name": "Acme Delivery",
+            "description": "Acme Delivery Co. - dispatch and drivers",
+            "enabled": true,
+            "id_ranges": [[3121000, 3121099]],
+            "talkgroups": [101, 102],
+            "subscribers": [
+                {"id": 3121001, "alias": "Dispatch Base"},
+                {"id": 3121010, "alias": "Truck 10"},
+                {"id": 3121011, "alias": "Truck 11"},
+                {"id": 3121050, "alias": "Truck 50 (stolen 2025-06-04)", "enabled": false}
+            ]
+        },
+        {
+            "name": "County Public Works",
+            "description": "Road crews on TS1, supervisors on TS2",
+            "enabled": true,
+            "id_ranges": [[3122000, 3122499]],
+            "slot1_talkgroups": [201, 202],
+            "slot2_talkgroups": [209],
+            "subscribers": [
+                {"id": 3122001, "alias": "PW Supervisor", "talkgroups": [201, 202, 209]}
+            ]
+        },
+        {
+            "name": "Site Security",
+            "description": "Explicitly listed radios only - no ID ranges",
+            "enabled": true,
+            "talkgroups": [301],
+            "subscribers": [
+                {"id": 3123001, "alias": "Gate 1"},
+                {"id": 3123002, "alias": "Gate 2"},
+                {"id": 3123003, "alias": "Rover"}
+            ]
+        }
+    ]
+}

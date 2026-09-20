@@ -1,12 +1,12 @@
-# HBlink4 Integration Guide
+# IpswichSuite Integration Guide
 
-This document describes how to use HBlink4 as a module in your own applications for advanced DMR routing and control.
+This document describes how to use IpswichSuite as a module in your own applications for advanced DMR routing and control.
 
 For basic installation and setup, see the main [README](../readme.md).
 
 ## Overview
 
-HBlink4 is designed to be modular, allowing you to access repeater metadata, connection states, and control the routing of DMR traffic. The main interface is through the `HBProtocol` class.
+IpswichSuite is designed to be modular, allowing you to access repeater metadata, connection states, and control the routing of DMR traffic. The main interface is through the `HBProtocol` class.
 
 ## Core Classes
 
@@ -15,7 +15,7 @@ HBlink4 is designed to be modular, allowing you to access repeater metadata, con
 The main protocol handler class that manages repeater connections and DMR traffic.
 
 ```python
-from hblink4.hblink import HBProtocol
+from ipswichsuite.server import HBProtocol
 from twisted.internet import reactor
 
 protocol = HBProtocol()
@@ -68,14 +68,14 @@ import json
 import signal
 from pathlib import Path
 from twisted.internet import reactor
-from hblink4.hblink import HBProtocol, CONFIG
+from ipswichsuite.server import HBProtocol, CONFIG
 
 class MyDMRApplication:
     def __init__(self, config_file: str):
         # Load configuration
         self.load_config(config_file)
         
-        # Initialize HBlink4
+        # Initialize IpswichSuite
         self.protocol = HBProtocol()
         
         # Set up signal handlers for graceful shutdown
@@ -103,11 +103,11 @@ class MyDMRApplication:
         reactor.callLater(60, self.check_repeater_status)
         
     def load_config(self, config_file: str):
-        """Load the HBlink configuration file"""
+        """Load the IpswichSuite configuration file"""
         try:
             with open(config_file, 'r') as f:
                 config = json.load(f)
-                # Update the global CONFIG used by HBlink
+                # Update the global CONFIG used by IpswichSuite
                 CONFIG.update(config)
         except Exception as e:
             print(f"Error loading config: {e}")
@@ -116,7 +116,7 @@ class MyDMRApplication:
     def handle_shutdown(self, signum, frame):
         """Handle shutdown signals"""
         print("Shutting down...")
-        # Let HBlink send disconnect messages
+        # Let IpswichSuite send disconnect messages
         self.protocol.cleanup()
         # Stop the reactor
         reactor.stop()
@@ -148,11 +148,11 @@ if __name__ == '__main__':
 
 ```python
 from twisted.internet import reactor
-from hblink4.hblink import HBProtocol, CONFIG
+from ipswichsuite.server import HBProtocol, CONFIG
 
 class MyDMRApplication:
     def __init__(self):
-        # Initialize HBlink4
+        # Initialize IpswichSuite
         self.protocol = HBProtocol()
         
         # Set up dual-stack UDP listeners
@@ -235,7 +235,7 @@ def get_repeater_states(protocol):
 
 4. **Event-Driven**: Use the event hooks in preference to polling when possible.
 
-5. **Thread Safety**: HBlink4 uses Twisted's event loop. Ensure all access is done through Twisted's thread-safe mechanisms if operating from other threads.
+5. **Thread Safety**: IpswichSuite uses Twisted's event loop. Ensure all access is done through Twisted's thread-safe mechanisms if operating from other threads.
 
 ## Limitations
 

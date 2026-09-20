@@ -4,7 +4,7 @@ Unit tests for the access_control module
 
 import unittest
 import logging
-from hblink4.access_control import (
+from ipswichsuite.access_control import (
     RepeaterMatcher, RepeaterConfig, InvalidPatternError, BlacklistError
 )
 
@@ -14,45 +14,82 @@ logging.basicConfig(level=logging.INFO,
 
 class TestRepeaterMatcher(unittest.TestCase):
     def setUp(self):
-        """Load test configuration from the sample config file"""
-        import json
-        import os
+        """Build a self-contained test configuration.
 
-        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 
-                                 'config', 'config_sample.json')
-        
-        with open(config_path, 'r') as f:
-            full_config = json.load(f)
-            
-        # Include both repeater and blacklist configurations
+        The tests used to load config/config_sample.json, which meant any
+        edit to the shipped sample silently broke them. The fixture below is
+        hermetic; test_sample_config_parses still validates the real sample.
+        """
         self.config = {
-            "repeaters": full_config["repeater_configurations"],
-            "blacklist": full_config["blacklist"]
-        }
-        
-        # Invalid configuration with multiple match types
-        self.invalid_config = {
             "repeaters": {
                 "patterns": [
                     {
-                        "name": "Invalid Multiple Matches",
-                        "match": {
-                            "ids": [312100],
-                            "callsigns": ["WA0EDA*"]
-                        },
+                        "name": "KS-DMR Network",
+                        "match": {"id_ranges": [[312000, 312199]]},
                         "config": {
-                            "enabled": True,
-                            "timeout": 20,
-                            "passphrase": "invalid",
-                            "talkgroups": [3120],
-                            "description": "Invalid Config"
+                            "passphrase": "ks-dmr-network-key",
+                            "slot1_talkgroups": [8, 9],
+                            "slot2_talkgroups": [3120, 3121, 3122]
+                        }
+                    },
+                    {
+                        "name": "WA0EDA Repeaters",
+                        "match": {"callsigns": ["WA0EDA*"]},
+                        "config": {
+                            "passphrase": "wa0eda-network-key",
+                            "slot1_talkgroups": [8],
+                            "slot2_talkgroups": [31201, 31202]
+                        }
+                    },
+                    {
+                        "name": "Regional Network",
+                        "match": {"id_ranges": [[310000, 312999]]},
+                        "config": {
+                            "passphrase": "regional-network-key",
+                            "slot1_talkgroups": [1, 2, 3, 8],
+                            "slot2_talkgroups": [3100, 3110, 3120]
+                        }
+                    },
+                    {
+                        "name": "Club Network",
+                        "match": {"ids": [312100, 312101, 312102]},
+                        "config": {
+                            "passphrase": "club-network-key",
+                            "slot1_talkgroups": [8],
+                            "slot2_talkgroups": [3100, 3101, 3102]
                         }
                     }
                 ],
-                "default": full_config["repeater_configurations"]["default"]
+                "default": {
+                    "passphrase": "passw0rd",
+                    "slot1_talkgroups": [1],
+                    "slot2_talkgroups": [2]
+                }
+            },
+            "blacklist": {
+                "patterns": [
+                    {
+                        "name": "Blocked IDs",
+                        "description": "Should never be used",
+                        "match": {"ids": [1, 2]},
+                        "reason": "Repeated abuse of network"
+                    },
+                    {
+                        "name": "Blocked Range",
+                        "description": "Unauthorized network range",
+                        "match": {"id_ranges": [[315000, 315999]]},
+                        "reason": "Unauthorized DMR-MARC range"
+                    },
+                    {
+                        "name": "Blocked Callsigns",
+                        "description": "Banned operators",
+                        "match": {"callsigns": ["BADACTOR*", "SPAM*"]},
+                        "reason": "Network abuse"
+                    }
+                ]
             }
         }
-        
+
         logging.info("\n=== Test Configuration Loaded ===")
         logging.info("Testing with patterns from config file:")
         for pattern in self.config["repeaters"]["patterns"]:
@@ -111,9 +148,9 @@ class TestRepeaterMatcher(unittest.TestCase):
         radio_id = 312100  # First ID in Club Network, but also in KS-DMR range
         callsign = "WA0EDA-TEST"
         logging.info(f"Testing repeater - ID: {radio_id}, Callsign: {callsign}")
-        logging.info("Note: This ID is in the KS-DMR range (312000-312099), which appears first in config")
-        
-        matching_pattern = next(p for p in self.config["repeaters"]["patterns"] 
+        logging.info("Note: This ID is in the KS-DMR range (312000-312199), which appears first in config")
+
+        matching_pattern = next(p for p in self.config["repeaters"]["patterns"]
                               if p["name"] == "KS-DMR Network")
         logging.info(f"Matching configuration section:\n{self._format_config_section(matching_pattern)}")
         
@@ -203,7 +240,7 @@ class TestRepeaterMatcher(unittest.TestCase):
         callsign = "WA0EDA"  # Also matches WA0EDA pattern
         logging.info(f"Testing repeater - ID: {radio_id}, Callsign: {callsign}")
         logging.info("This matches multiple patterns:")
-        logging.info("  1. KS-DMR Network (id_range 312000-312099) - FIRST")
+        logging.info("  1. KS-DMR Network (id_range 312000-312199) - FIRST")
         logging.info("  2. WA0EDA Repeaters (callsign WA0EDA*)")
         logging.info("  3. Regional Network (id_range includes 312000-312999)")
         logging.info("  4. Club Network (ids includes 312100)")
@@ -264,6 +301,23 @@ class TestRepeaterMatcher(unittest.TestCase):
         logging.info(f"Result: Correctly rejected - {str(context.exception)}")
         self.assertEqual(context.exception.pattern_name, "Blocked Callsigns")
         self.assertEqual(context.exception.reason, "Network abuse")
+
+    def test_sample_config_parses(self):
+        """The shipped config_sample.json must always load into a RepeaterMatcher"""
+        import json
+        import os
+
+        config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                   'config', 'config_sample.json')
+        with open(config_path, 'r') as f:
+            full_config = json.load(f)
+
+        matcher = RepeaterMatcher(full_config)
+        self.assertTrue(matcher.patterns, "Sample config should define at least one pattern")
+        self.assertIsNotNone(matcher.default_config)
+        # Every pattern's config must have parsed into a RepeaterConfig
+        for pattern in matcher.patterns:
+            self.assertIsInstance(pattern.config, RepeaterConfig)
 
 if __name__ == '__main__':
     unittest.main()

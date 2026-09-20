@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """
-Copyright (C) 2025 Cort Buffington, N0MJS
+IpswichSuite DMR network server (by Ipswich River Labs, LLC)
 
 A complete architectural redesign of HBlink3, implementing a repeater-centric
-approach to DMR server services. The HomeBrew DMR protocol is UDP-based, used for 
+approach to DMR server services. The HomeBrew DMR protocol is UDP-based, used for
 communication between DMR repeaters and servers.
+
+Copyright (C) 2025 Cort Buffington, N0MJS (as HBlink4)
+Modified 2026 by Ipswich River Labs, LLC: IpswichSuite rebrand and
+FCC Part 90 features (subscriber access control, call detail records).
 
 License: GNU GPLv3
 """
@@ -33,20 +37,26 @@ import sys
 try:
     from .constants import (
         RPTA, RPTL, RPTK, RPTC, RPTCL, MSTCL, DMRD,
-        MSTNAK, MSTPONG, RPTPING, RPTACK, RPTP, RPTO, DMRA
+        MSTNAK, MSTPONG, RPTPING, RPTACK, RPTP, RPTO, DMRA,
+        PRODUCT_NAME, PRODUCT_VENDOR
     )
     from .access_control import RepeaterMatcher
     from .events import EventEmitter
     from .user_cache import UserCache
+    from .subscribers import SubscriberACL, SubscriberConfigError
+    from .cdr import CDRWriter
 except ImportError:
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from constants import (
         RPTA, RPTL, RPTK, RPTC, RPTCL, MSTCL, DMRD,
-        MSTNAK, MSTPONG, RPTPING, RPTACK, RPTP, RPTO, DMRA
+        MSTNAK, MSTPONG, RPTPING, RPTACK, RPTP, RPTO, DMRA,
+        PRODUCT_NAME, PRODUCT_VENDOR
     )
     from access_control import RepeaterMatcher
     from events import EventEmitter
     from user_cache import UserCache
+    from subscribers import SubscriberACL, SubscriberConfigError
+    from cdr import CDRWriter
 
 # Type definitions
 # Address tuple can be IPv4 (host, port) or IPv6 (host, port, flowinfo, scopeid)
@@ -71,6 +81,8 @@ class StreamState:
     is_assumed: bool = False  # True if this is an assumed stream (forwarded to target, not received from it)
     target_repeaters: Optional[set] = None  # Cached set of repeater_ids approved for forwarding
     routing_cached: bool = False  # True once routing has been calculated
+    fleet: Optional[str] = None  # Subscriber ACL fleet name (Part 90), for CDR
+    alias: str = ''              # Subscriber alias from the fleet map, for CDR
     
     def is_active(self, timeout: float = 2.0) -> bool:
         """Check if stream is still active (within timeout period)"""
@@ -206,7 +218,7 @@ class HBProtocol(asyncio.DatagramProtocol):
             host_ipv4=dashboard_config.get('host_ipv4', '127.0.0.1'),
             host_ipv6=dashboard_config.get('host_ipv6', '::1'),
             port=dashboard_config.get('port', 8765),
-            unix_socket=dashboard_config.get('unix_socket', '/tmp/hblink4.sock'),
+            unix_socket=dashboard_config.get('unix_socket', '/tmp/ipswichsuite.sock'),
             disable_ipv6=dashboard_config.get('disable_ipv6', False),
             buffer_size=dashboard_config.get('buffer_size', 65536)
         )
@@ -229,7 +241,35 @@ class HBProtocol(asyncio.DatagramProtocol):
             cache_timeout = 60
         self._user_cache = UserCache(timeout_seconds=cache_timeout)
         LOGGER.info(f'User cache initialized with {cache_timeout}s timeout')
-        
+
+        # Part 90 subscriber access control (optional - see docs/part90.md)
+        self._subscribers: Optional[SubscriberACL] = None
+        sub_config = CONFIG.get('global', {}).get('subscriber_access', {})
+        if sub_config.get('enabled', False):
+            sub_file = sub_config.get('file', 'config/subscribers.json')
+            try:
+                self._subscribers = SubscriberACL.from_file(sub_file)
+            except (OSError, ValueError, SubscriberConfigError) as e:
+                LOGGER.error(f'✗ Subscriber ACL is enabled but {sub_file} could not be loaded: {e}')
+                LOGGER.error(f'✗ Copy config/subscribers_sample.json to {sub_file} and edit it, '
+                             f'or set global.subscriber_access.enabled to false')
+                raise SystemExit(1)
+            stats = self._subscribers.get_stats()
+            LOGGER.info(f"Subscriber ACL loaded from {sub_file}: mode={stats['mode']}, "
+                        f"{stats['fleets']} fleets, {stats['explicit_subscribers']} explicit "
+                        f"subscribers, {stats['id_range_span']} IDs in ranges")
+            if stats['mode'] == 'permissive':
+                LOGGER.warning('Subscriber ACL is in PERMISSIVE mode - violations are logged '
+                               'and recorded but all traffic is passed')
+
+        # Call detail records (optional - one JSONL record per call for billing/audit)
+        cdr_config = CONFIG.get('global', {}).get('cdr', {})
+        self._cdr = CDRWriter(
+            directory=cdr_config.get('directory', 'logs/cdr'),
+            retention_days=cdr_config.get('retention_days', 90),
+            enabled=cdr_config.get('enabled', False)
+        )
+
         # Cache for repeater_id bytes to int conversions (for logging efficiency)
         self._rid_cache: Dict[bytes, int] = {}
     
@@ -319,7 +359,15 @@ class HBProtocol(asyncio.DatagramProtocol):
     def cleanup(self) -> None:
         """Send disconnect messages to all repeaters and cleanup resources."""
         LOGGER.info("Starting graceful shutdown...")
-        
+
+        # Close out in-flight streams so their call detail records are written
+        current_time = time()
+        for repeater_id, repeater in self._repeaters.items():
+            for slot in (1, 2):
+                stream = repeater.get_slot_stream(slot)
+                if stream and not stream.ended:
+                    self._end_stream(stream, repeater_id, slot, current_time, 'shutdown')
+
         # Send MSTCL to all connected repeaters
         if self._port:  # Only attempt to send if we have a port
             for repeater_id, repeater in self._repeaters.items():
@@ -332,8 +380,12 @@ class HBProtocol(asyncio.DatagramProtocol):
                         LOGGER.error(f"Error sending disconnect to repeater {self._rid_to_int(repeater_id)}: {e}")
 
         # Give time for disconnects to be sent
-        import time
-        time.sleep(0.5)  # 500ms should be enough for UDP packets to be sent
+        from time import sleep
+        sleep(0.5)  # 500ms should be enough for UDP packets to be sent
+
+        # Flush and close the CDR file
+        if self._cdr:
+            self._cdr.close()
 
     async def _run_periodic(self, interval: float, func, name: str):
         """
@@ -376,7 +428,19 @@ class HBProtocol(asyncio.DatagramProtocol):
         self._tasks.append(
             asyncio.create_task(self._run_periodic(60, self._cleanup_user_cache, "user cache cleanup"))
         )
-        LOGGER.info('Periodic tasks started (repeater timeout, stream timeout, user cache cleanup)')
+        task_names = 'repeater timeout, stream timeout, user cache cleanup'
+
+        # Subscriber ACL hot-reload (Part 90) - picks up fleet map edits without a restart
+        if self._subscribers and self._subscribers.reload_interval > 0:
+            self._tasks.append(
+                asyncio.create_task(self._run_periodic(
+                    self._subscribers.reload_interval,
+                    self._subscribers.maybe_reload,
+                    "subscriber ACL reload"))
+            )
+            task_names += ', subscriber ACL reload'
+
+        LOGGER.info(f'Periodic tasks started ({task_names})')
         
 
 
@@ -446,6 +510,8 @@ class HBProtocol(asyncio.DatagramProtocol):
             reason_text = f'reason=terminator - entering hang time ({hang_time}s)'
         elif end_reason == 'fast_terminator':
             reason_text = f'reason=fast_terminator - entering hang time ({hang_time}s)'
+        elif end_reason in ('repeater_disconnect', 'shutdown'):
+            reason_text = f'reason={end_reason}'
         else:  # timeout
             reason_text = f'entering hang time ({hang_time}s)'
         
@@ -481,7 +547,27 @@ class HBProtocol(asyncio.DatagramProtocol):
         # Decrement active calls counter if this was an assumed (TX) stream
         if stream.is_assumed:
             self._active_calls -= 1
-    
+
+        # Write the call detail record - RX streams only, so each call is
+        # recorded exactly once (assumed TX streams mirror the same call)
+        if self._cdr.enabled and not stream.is_assumed:
+            repeater = self._repeaters.get(repeater_id)
+            self._cdr.record_call(
+                start_time=stream.start_time,
+                end_time=current_time,
+                src_id=src_int,
+                dst_id=dst_int,
+                slot=slot,
+                call_type=stream.call_type,
+                repeater_id=rid_int,
+                repeater_callsign=repeater.get_callsign_str() if repeater else '',
+                packets=stream.packet_count,
+                end_reason=end_reason,
+                target_count=len(stream.target_repeaters) if stream.target_repeaters else 0,
+                fleet=stream.fleet,
+                alias=stream.alias,
+            )
+
     def _check_slot_timeout(self, repeater_id: bytes, repeater: RepeaterState, slot: int, 
                            stream: StreamState, current_time: float, stream_timeout: float, 
                            hang_time: float) -> bool:
@@ -631,7 +717,63 @@ class HBProtocol(asyncio.DatagramProtocol):
         # O(1) set membership check
         return tgid in allowed_tgids
     
-    def _is_slot_busy(self, repeater_id: bytes, slot: int, stream_id: bytes, 
+    def _check_subscriber_access(self, repeater: RepeaterState, rf_src: bytes,
+                                 dst_id: bytes, slot: int, stream_id: bytes,
+                                 call_type: str):
+        """
+        Part 90 subscriber authorization for a new stream (once per stream).
+
+        Returns (allowed, decision). decision is None when the ACL is not
+        active. Denials (and permissive-mode violations) are logged, written
+        to the CDR, and emitted to the dashboard once per stream.
+        """
+        if not self._subscribers or self._subscribers.mode == 'disabled':
+            return True, None
+
+        src_id = int.from_bytes(rf_src, 'big')
+        tgid = int.from_bytes(dst_id, 'big')
+        decision = self._subscribers.check_access(src_id, tgid, slot, call_type)
+
+        if not decision.would_deny:
+            return True, decision
+
+        # Violation - log/record once per stream, not per packet
+        denial_key = (repeater.repeater_id, slot, stream_id, 'acl')
+        if denial_key not in self._denied_streams:
+            self._denied_streams[denial_key] = time()
+            enforced = not decision.allowed
+            verdict = 'DENIED' if enforced else 'PERMISSIVE (would deny)'
+            fleet_info = f", fleet='{decision.fleet}'" if decision.fleet else ''
+            alias_info = f", alias='{decision.alias}'" if decision.alias else ''
+            LOGGER.warning(f'Subscriber ACL {verdict}: src={src_id} dst={tgid} TS{slot} '
+                           f'on repeater {self._rid_to_int(repeater.repeater_id)} - '
+                           f'reason={decision.reason}{fleet_info}{alias_info}')
+
+            self._cdr.record_denial(
+                src_id=src_id,
+                dst_id=tgid,
+                slot=slot,
+                repeater_id=self._rid_to_int(repeater.repeater_id),
+                reason=decision.reason,
+                enforced=enforced,
+                fleet=decision.fleet,
+                alias=decision.alias,
+            )
+
+            self._events.emit('access_denied', {
+                'repeater_id': self._rid_to_int(repeater.repeater_id),
+                'slot': slot,
+                'src_id': src_id,
+                'dst_id': tgid,
+                'reason': decision.reason,
+                'fleet': decision.fleet,
+                'alias': decision.alias,
+                'enforced': enforced,
+            })
+
+        return decision.allowed, decision
+
+    def _is_slot_busy(self, repeater_id: bytes, slot: int, stream_id: bytes,
                      rf_src: bytes = None, dst_id: bytes = None) -> bool:
         """
         Check if a slot is busy with a different stream (contention check).
@@ -905,6 +1047,14 @@ class HBProtocol(asyncio.DatagramProtocol):
                 # Deny the new stream - first come, first served
                 return False
         
+        # Part 90 subscriber authorization: is this radio provisioned, enabled,
+        # and allowed to use this talkgroup? (checked once per stream)
+        call_type_str = "private" if call_type_bit else "group"
+        sub_allowed, sub_decision = self._check_subscriber_access(
+            repeater, rf_src, dst_id, slot, stream_id, call_type_str)
+        if not sub_allowed:
+            return False
+
         # Check if this repeater is allowed to send traffic on this TS/TGID (inbound routing)
         tgid = int.from_bytes(dst_id, 'big')
         if not self._check_inbound_routing(repeater.repeater_id, slot, tgid):
@@ -938,9 +1088,11 @@ class HBProtocol(asyncio.DatagramProtocol):
             last_seen=current_time,
             stream_id=stream_id,
             packet_count=1,
-            call_type="private" if call_type_bit else "group",
+            call_type=call_type_str,
             target_repeaters=target_repeaters,
-            routing_cached=True
+            routing_cached=True,
+            fleet=sub_decision.fleet if sub_decision else None,
+            alias=sub_decision.alias if sub_decision else ''
         )
         
         repeater.set_slot_stream(slot, new_stream)
@@ -1043,10 +1195,18 @@ class HBProtocol(asyncio.DatagramProtocol):
         """
         if repeater_id in self._repeaters:
             repeater = self._repeaters[repeater_id]
-            
+
             # Log current state before removal
             LOGGER.debug(f'Removing repeater {self._rid_to_int(repeater_id)}: reason={reason}, state={repeater.connection_state}, addr={repeater.sockaddr}')
-            
+
+            # Close out any in-flight streams so their call detail records
+            # are written before the repeater state is dropped
+            current_time = time()
+            for slot in (1, 2):
+                stream = repeater.get_slot_stream(slot)
+                if stream and not stream.ended:
+                    self._end_stream(stream, repeater_id, slot, current_time, 'repeater_disconnect')
+
             # Emit event before removing so dashboard can update
             self._events.emit('repeater_disconnected', {
                 'repeater_id': self._rid_to_int(repeater_id),
@@ -1760,9 +1920,9 @@ def cleanup_old_logs(log_dir: pathlib.Path, max_days: int) -> None:
     cutoff_date = current_date - timedelta(days=max_days)
     
     try:
-        for log_file in log_dir.glob('hblink.log.*'):
+        for log_file in log_dir.glob('ipswichsuite.log.*'):
             try:
-                # Extract date from filename (expecting format: hblink.log.YYYY-MM-DD)
+                # Extract date from filename (expecting format: ipswichsuite.log.YYYY-MM-DD)
                 date_str = log_file.name.split('.')[-1]
                 file_date = datetime.strptime(date_str, '%Y-%m-%d')
                 
@@ -1779,7 +1939,7 @@ def setup_logging():
     logging_config = CONFIG.get('global', {}).get('logging', {})
     
     # Get logging configuration with defaults
-    log_file = logging_config.get('file', 'logs/hblink.log')
+    log_file = logging_config.get('file', 'logs/ipswichsuite.log')
     file_level = getattr(logging, logging_config.get('file_level', 'DEBUG'))
     console_level = getattr(logging, logging_config.get('console_level', 'INFO'))
     max_days = logging_config.get('retention_days', 30)
@@ -1855,7 +2015,7 @@ async def async_main():
             )
             transports.append(transport_v4)
             protocols.append(protocol_v4)
-            LOGGER.info(f'✓ HBlink4 listening on {bind_ipv4}:{port_ipv4} (UDP, IPv4)')
+            LOGGER.info(f'✓ IpswichSuite listening on {bind_ipv4}:{port_ipv4} (UDP, IPv4)')
         except Exception as e:
             LOGGER.error(f'✗ Failed to bind IPv4 to {bind_ipv4}:{port_ipv4}: {e}')
             if bind_ipv4 == '0.0.0.0':
@@ -1872,7 +2032,7 @@ async def async_main():
             )
             transports.append(transport_v6)
             protocols.append(protocol_v6)
-            LOGGER.info(f'✓ HBlink4 listening on [{bind_ipv6}]:{port_ipv6} (UDP, IPv6)')
+            LOGGER.info(f'✓ IpswichSuite listening on [{bind_ipv6}]:{port_ipv6} (UDP, IPv6)')
         except OSError as e:
             error_msg = str(e)
             if 'address already in use' in error_msg.lower() or 'address in use' in error_msg.lower():
@@ -1928,7 +2088,7 @@ def main():
     
     # Startup banner
     LOGGER.info('🚀 ═══════════════════════════════════════════════════════════════')
-    LOGGER.info('🚀 HBLINK4 STARTING UP')
+    LOGGER.info(f'🚀 {PRODUCT_NAME.upper()} STARTING UP ({PRODUCT_VENDOR})')
     LOGGER.info('🚀 ═══════════════════════════════════════════════════════════════')
     
     asyncio.run(async_main())

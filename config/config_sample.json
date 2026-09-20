@@ -8,7 +8,7 @@
         "port_ipv4": 62031,
         "port_ipv6": 62031,
         "logging": {
-            "file": "logs/hblink.log",
+            "file": "logs/ipswichsuite.log",
             "console_level": "INFO",
             "file_level": "DEBUG",
             "retention_days": 30
@@ -19,6 +19,15 @@
         "stream_hang_time": 10.0,
         "user_cache": {
             "timeout": 600
+        },
+        "subscriber_access": {
+            "enabled": false,
+            "file": "config/subscribers.json"
+        },
+        "cdr": {
+            "enabled": false,
+            "directory": "logs/cdr",
+            "retention_days": 90
         }
     },
     "dashboard": {
@@ -28,7 +37,7 @@
         "host_ipv4": "127.0.0.1",
         "host_ipv6": "::1",
         "port": 8765,
-        "unix_socket": "/tmp/hblink4.sock",
+        "unix_socket": "/tmp/ipswichsuite.sock",
         "buffer_size": 65536
     },
     "blacklist": {

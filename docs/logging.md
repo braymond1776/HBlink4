@@ -1,6 +1,6 @@
-# HBlink4 Logging System
+# IpswichSuite Logging System
 
-HBlink4 implements a comprehensive logging system with daily log rotation and retention control. This guide describes the logging configuration options and behavior.
+IpswichSuite implements a comprehensive logging system with daily log rotation and retention control. This guide describes the logging configuration options and behavior.
 
 ## Overview
 
@@ -18,7 +18,7 @@ Logging is configured in the global section of the configuration file:
 {
     "global": {
         "logging": {
-            "file": "logs/hblink.log",
+            "file": "logs/ipswichsuite.log",
             "console_level": "INFO",
             "file_level": "DEBUG",
             "retention_days": 30,
@@ -34,7 +34,7 @@ Logging is configured in the global section of the configuration file:
 
 | Option | Type | Description | Default |
 |--------|------|-------------|---------|
-| `file` | string | Path to log file | "logs/hblink.log" |
+| `file` | string | Path to log file | "logs/ipswichsuite.log" |
 | `console_level` | string | Logging level for console output | "INFO" |
 | `file_level` | string | Logging level for file output | "DEBUG" |
 | `retention_days` | number | Days to retain log files | 30 |
@@ -52,15 +52,15 @@ The following log levels are available, in order of increasing severity:
 
 ## Log Files
 
-- Main log file: `logs/hblink.log`
-- Rotated logs: `logs/hblink.log.YYYY-MM-DD`
+- Main log file: `logs/ipswichsuite.log`
+- Rotated logs: `logs/ipswichsuite.log.YYYY-MM-DD`
 - Log rotation occurs daily at midnight
 - Old logs are automatically cleaned up based on retention_days
 
 ## Example Log Output
 
 ```
-2024-01-20 10:15:23 - INFO - HBlink4 server is running on 0.0.0.0:62031 (UDP)
+2024-01-20 10:15:23 - INFO - IpswichSuite server is running on 0.0.0.0:62031 (UDP)
 2024-01-20 10:15:30 - INFO - Repeater 312100 (WA0EDA-1) login request from 192.168.1.100:62031
 2024-01-20 10:15:30 - DEBUG - Processing login for repeater ID 312100 from 192.168.1.100:62031
 2024-01-20 10:15:31 - INFO - Repeater 312100 (WA0EDA-1) authenticated successfully
@@ -104,9 +104,9 @@ Certain sections of code have been commented out with specific marker phrases to
 ### Per-packet logging - only enable for heavy troubleshooting
 
 **Purpose**: High-frequency debug logging that generates massive amounts of output  
-**Location**: `hblink4/hblink.py`  
+**Location**: `ipswichsuite/server.py`  
 **When to enable**: Only when troubleshooting specific packet-level issues  
-**Search command**: `grep -n "Per-packet logging" hblink4/hblink.py`
+**Search command**: `grep -n "Per-packet logging" ipswichsuite/server.py`
 
 **Commented sections**:
 1. Command bytes logging (line ~719)
@@ -120,9 +120,9 @@ Certain sections of code have been commented out with specific marker phrases to
 ### LC recovery - disabled until fixed
 
 **Purpose**: Embedded Link Control extraction from voice frames  
-**Location**: `hblink4/hblink.py`  
+**Location**: `ipswichsuite/server.py`  
 **Status**: Not currently working correctly, disabled pending fix  
-**Search command**: `grep -n "LC recovery" hblink4/hblink.py`
+**Search command**: `grep -n "LC recovery" ipswichsuite/server.py`
 
 **Commented sections**:
 1. StreamInfo fields: `missed_header`, `embedded_lc_bits` (line ~78-79)

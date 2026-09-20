@@ -243,7 +243,7 @@ Original user can switch TGs during hang time:
 
 ## Stream End Detection
 
-HBlink4 uses a **two-tier detection system** for stream end:
+IpswichSuite uses a **two-tier detection system** for stream end:
 
 ### Tier 1: DMR Terminator Frame Detection (Primary)
 

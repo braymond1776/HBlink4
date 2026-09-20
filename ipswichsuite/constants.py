@@ -2,6 +2,10 @@
 Protocol and system constants
 """
 
+# Product identity (single source of truth for user-visible branding)
+PRODUCT_NAME = 'IpswichSuite'
+PRODUCT_VENDOR = 'Ipswich River Labs, LLC'
+
 # HomeBrew Protocol Constants
 DMRD    = b'DMRD'
 MSTCL   = b'MSTCL'

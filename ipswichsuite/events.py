@@ -25,7 +25,7 @@ class EventEmitter:
     def __init__(self, enabled: bool = True, transport: str = 'unix', 
                  host_ipv4: str = '127.0.0.1', host_ipv6: str = '::1',
                  port: int = 8765,
-                 unix_socket: str = '/tmp/hblink4.sock',
+                 unix_socket: str = '/tmp/ipswichsuite.sock',
                  disable_ipv6: bool = False,
                  buffer_size: int = 65536):
         """
@@ -181,7 +181,7 @@ class EventEmitter:
     
     def emit(self, event_type: str, data: Dict[str, Any]) -> None:
         """
-        Send event to dashboard (non-blocking, never blocks HBlink)
+        Send event to dashboard (non-blocking, never blocks the server)
         
         Args:
             event_type: Type of event (e.g., 'stream_start', 'repeater_connected')
@@ -209,7 +209,7 @@ class EventEmitter:
     def check_for_sync_request(self):
         """
         Public method to check for incoming sync requests.
-        Should be called periodically by HBlink's event loop.
+        Should be called periodically by the server's event loop.
         """
         # Attempt reconnection if disconnected
         if not self.connected and self.transport in ('tcp', 'unix'):
